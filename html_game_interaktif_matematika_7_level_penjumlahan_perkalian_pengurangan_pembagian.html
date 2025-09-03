@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Games Matematika Interaktif – 7 Level</title>
+  <style>
+    /* === gaya sama seperti sebelumnya (dipangkas biar ringkas) === */
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#0f1226;color:#e8ecf7}
+    .wrap{max-width:1100px;margin:auto;padding:20px}
+    .card{background:#191c3a;border-radius:16px;padding:16px;margin-top:12px}
+    .btn{padding:10px 14px;border-radius:10px;border:none;cursor:pointer}
+    .btn.ghost{background:transparent;border:1px solid #555;color:#fff}
+    .chip{padding:8px 12px;border-radius:10px;margin:2px;background:#10132a;color:#fff;cursor:pointer}
+    .chip.active{background:#21264d}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .hud{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:10px}
+    .k{background:#0f1230;padding:10px;border-radius:10px;text-align:center}
+    .v{font-weight:bold;font-size:18px}
+    .stage{min-height:300px;display:grid;place-items:center}
+    .q-text{font-size:28px;font-weight:bold}
+    .choices{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px}
+    .choice{background:#121633;padding:12px;border-radius:10px;cursor:pointer}
+    .result{text-align:center}
+    .badge{background:#0e1330;padding:6px 10px;border-radius:999px;display:inline-block;margin-bottom:8px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Games Matematika Interaktif</h1>
+      <button id="btnReset" class="btn ghost small">↻ Reset</button>
+    </header>
+
+    <!-- HOME -->
+    <section id="home" class="card">
+      <h2>Data Pemain</h2>
+      <div class="row">
+        <input type="text" id="nama" placeholder="Nama Anda">
+        <input type="text" id="kelas" placeholder="Kelas Anda">
+      </div>
+      <hr>
+      <h2>Pilih Operasi & Level</h2>
+      <div class="row">
+        <span>Operasi:</span>
+        <div id="ops">
+          <button class="chip" data-op="add">➕ Penjumlahan</button>
+          <button class="chip" data-op="sub">➖ Pengurangan</button>
+          <button class="chip" data-op="mul">✖️ Perkalian</button>
+          <button class="chip" data-op="div">➗ Pembagian</button>
+        </div>
+      </div>
+      <div class="row">
+        <span>Level:</span>
+        <div id="levels"></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="btnStart" class="btn">Mulai ▶</button>
+        <button id="btnHow" class="btn ghost">Cara Main</button>
+      </div>
+      <div class="card" style="margin-top:12px;background:#101437">
+        <h3>Batas Waktu per Operasi</h3>
+        <ul>
+          <li>➕ Penjumlahan: <b>6 detik</b></li>
+          <li>✖️ Perkalian: <b>7 detik</b></li>
+          <li>➖ Pengurangan: <b>8 detik</b></li>
+          <li>➗ Pembagian: <b>10 detik</b></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- GAME -->
+    <section id="game" class="card" style="display:none">
+      <div class="hud">
+        <div class="k"><div>Operasi</div><div id="hudOp" class="v">-</div></div>
+        <div class="k"><div>Level</div><div id="hudLvl" class="v">-</div></div>
+        <div class="k"><div>Soal</div><div><span id="hudNo">0</span>/10</div></div>
+        <div class="k"><div>Skor</div><div id="hudScore" class="v">0</div></div>
+        <div class="k"><div>Waktu</div><div id="hudTime" class="v">0s</div></div>
+      </div>
+      <div class="stage" id="stage"></div>
+    </section>
+
+    <!-- HASIL LEVEL -->
+    <section id="result" class="card" style="display:none">
+      <div class="result">
+        <span class="badge">Ringkasan Level</span>
+        <h2 id="resTitle">Level Selesai!</h2>
+        <p><b>Nama:</b> <span id="resNama">-</span> | <b>Kelas:</b> <span id="resKelas">-</span></p>
+        <p><b>Operasi:</b> <span id="resOp">-</span> | <b>Level:</b> <span id="resLvl">-</span></p>
+        <p><b>Benar:</b> <span id="resBenar">0</span> | <b>Salah:</b> <span id="resSalah">0</span> | <b>Skor:</b> <span id="resScore">0</span></p>
+        <div class="row" style="margin-top:6px">
+          <button id="btnNextLevel" class="btn">Lanjut Level ▶</button>
+          <button id="btnChange" class="btn ghost">Ganti Operasi/Level</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- HASIL AKHIR -->
+    <section id="final" class="card" style="display:none">
+      <div class="result">
+        <span class="badge">Rekap Semua Level</span>
+        <h2>Permainan Selesai 🎉</h2>
+        <p><b>Nama:</b> <span id="finalNama">-</span> | <b>Kelas:</b> <span id="finalKelas">-</span></p>
+        <p><b>Total Skor:</b> <span id="finalSkor">0</span></p>
+        <button onclick="location.reload()" class="btn">Main Lagi 🔄</button>
+      </div>
+    </section>
+
+    <footer>© 2025 Games Matematika – Belajar seru dan interaktif.</footer>
+  </div>
+
+<script>
+  // ======= KONFIGURASI =======
+  const TIME_LIMIT = { add:6, mul:7, sub:8, div:10 };
+  const OP_LABEL = { add:"Penjumlahan", sub:"Pengurangan", mul:"Perkalian", div:"Pembagian" };
+  const MODES = ["pilihan","truefalse","isian"];
+
+  const state = {
+    op:null, level:1, qNo:0, score:0, benar:0, salah:0,
+    current:null, timer:null, timeLeft:0, timeMax:0,
+    nama:"", kelas:"", totalSkor:0
+  };
+
+  const el = s=>document.querySelector(s);
+  const stage = el('#stage');
+  const rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+  function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rand(0,i);[a[i],a[j]]=[a[j],a[i]]}return a;}
+
+  // isi tombol level
+  for(let i=1;i<=7;i++){ 
+    let b=document.createElement('button'); 
+    b.className='chip'; b.dataset.level=i; b.textContent='Lv '+i; 
+    el('#levels').appendChild(b);
+  }
+
+  // pilih operasi
+  el('#ops').addEventListener('click',e=>{
+    if(e.target.classList.contains('chip')){
+      document.querySelectorAll('#ops .chip').forEach(c=>c.classList.remove('active'));
+      e.target.classList.add('active');
+      state.op=e.target.dataset.op;
+    }
+  });
+  // pilih level
+  el('#levels').addEventListener('click',e=>{
+    if(e.target.classList.contains('chip')){
+      document.querySelectorAll('#levels .chip').forEach(c=>c.classList.remove('active'));
+      e.target.classList.add('active');
+      state.level=parseInt(e.target.dataset.level);
+    }
+  });
+
+  // mulai
+  el('#btnStart').addEventListener('click',()=>{
+    state.nama=el('#nama').value.trim();
+    state.kelas=el('#kelas').value.trim();
+    if(!state.nama||!state.kelas){alert("Isi nama & kelas!");return;}
+    if(!state.op){alert("Pilih operasi!");return;}
+    startLevel();
+  });
+  el('#btnReset').onclick=()=>location.reload();
+
+  function startLevel(){
+    state.qNo=0; state.score=0; state.benar=0; state.salah=0;
+    el('#home').style.display='none';
+    el('#game').style.display='block';
+    nextQuestion();
+  }
+
+  function genQuestion(op){
+    let a,b,ans,expr;
+    if(op==='add'){a=rand(1,20);b=rand(1,20);ans=a+b;expr=`${a}+${b}`;}
+    if(op==='sub'){a=rand(1,20);b=rand(1,a);ans=a-b;expr=`${a}-${b}`;}
+    if(op==='mul'){a=rand(1,10);b=rand(1,10);ans=a*b;expr=`${a}×${b}`;}
+    if(op==='div'){b=rand(1,10);ans=rand(1,10);a=b*ans;expr=`${a}÷${b}`;}
+    return {expr,ans};
+  }
+
+  function makeOptions(correct){
+    const set=new Set([correct]);
+    while(set.size<4)set.add(correct+rand(-5,5));
+    return shuffle([...set]);
+  }
+
+  function nextQuestion(){
+    clearInterval(state.timer);
+    state.qNo++;
+    if(state.qNo>10){return endLevel();}
+    el('#hudOp').textContent=OP_LABEL[state.op];
+    el('#hudLvl').textContent=state.level;
+    el('#hudNo').textContent=state.qNo;
+    el('#hudScore').textContent=state.score;
+    const q=genQuestion(state.op);
+    state.current=q;
+    stage.innerHTML=`<div class="q-text">${q.expr} = ?</div>`;
+    const opts=makeOptions(q.ans);
+    const box=document.createElement('div');box.className='choices';
+    opts.forEach(v=>{
+      const btn=document.createElement('div');btn.className='choice';btn.textContent=v;
+      btn.onclick=()=>handleAnswer(v);
+      box.appendChild(btn);
+    });
+    stage.appendChild(box);
+    state.timeMax=TIME_LIMIT[state.op];state.timeLeft=state.timeMax;
+    el('#hudTime').textContent=state.timeLeft+"s";
+    state.timer=setInterval(()=>{
+      state.timeLeft-=1;
+      el('#hudTime').textContent=state.timeLeft+"s";
+      if(state.timeLeft<=0){clearInterval(state.timer);handleAnswer(null);}
+    },1000);
+  }
+
+  function handleAnswer(val){
+    clearInterval(state.timer);
+    const ok=val===state.current.ans;
+    if(ok){state.score+=10;state.benar++;}
+    else{state.salah++;}
+    setTimeout(nextQuestion,300);
+  }
+
+  function endLevel(){
+    el('#game').style.display='none';
+    el('#result').style.display='block';
+    el('#resNama').textContent=state.nama;
+    el('#resKelas').textContent=state.kelas;
+    el('#resOp').textContent=OP_LABEL[state.op];
+    el('#resLvl').textContent=state.level;
+    el('#resBenar').textContent=state.benar;
+    el('#resSalah').textContent=state.salah;
+    el('#resScore').textContent=state.score;
+    state.totalSkor+=state.score;
+    if(state.level===7){
+      // selesai semua level
+      el('#result').style.display='none';
+      el('#final').style.display='block';
+      el('#finalNama').textContent=state.nama;
+      el('#finalKelas').textContent=state.kelas;
+      el('#finalSkor').textContent=state.totalSkor;
+    }
+  }
+
+  el('#btnNextLevel').onclick=()=>{
+    if(state.level<7){state.level++;startLevel();}
+    else{endLevel();}
+  };
+  el('#btnChange').onclick=()=>{
+    el('#result').style.display='none';
+    el('#home').style.display='block';
+  };
+</script>
+</body>
+</html>
